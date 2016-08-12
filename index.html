@@ -1,0 +1,430 @@
+<!doctype html>
+<html>
+	<head>
+		<link rel="stylesheet" type="text/css" href="index.css">
+		<title>Approximate Circular String Search</title>
+	</head>
+
+	<body>
+		<h1 id="title">Approximate Circular String Search</h1>
+		<div class="roundBox" id="contentBox">
+
+			<!--PATTERN-->
+			<div class="roundBox" id="patternBox">
+				<h4>PATTERN</h4>
+				<textarea class="input fileData" id="patternDisplay" cols="50" rows="10" placeholder="Pattern to find" filePicker="patternFilePicker" maxlength="100000"></textarea>
+				<input class="patternFilePicker" type="file" id="patternFilePicker" fileData="patternFileData">
+				<label id="patternCharCount" class="charCount">0 Chars</label>
+			</div>
+
+			<!--TEXT-->
+			<div class="roundBox" id="textBox">
+				<h4>TEXT</h4>
+				<input class="textFilePicker" type="file" id="textFilePicker" fileData="textFileData">
+				<label id="textFileSize" class="fileSize">0 B</label>
+			</div>
+
+			<!--RESULT-->
+			<div class="roundBox" id="resultBox">
+				<h4>RESULT</h4>
+				<textarea class="input" id="searchResults" cols="2" rows="10" placeholder="Results" readonly></textarea>
+				<input id="downloadButton" type="button" value="Download" download="results.txt" onclick="doDL(document.getElementById('searchResults').value)">
+			</div>
+
+			<!--OPTIONS AND SEARCH-->
+			<div class="roundBox" id="optionsBox">
+				<div id="optionTitles">
+					<ul class="noBulletList">
+						<li>Choose K Bound:</li>
+						<li>Choose Filters:</li>
+						<li>Remove False Positives:</li>
+					</ul>
+				</div>
+				<div id="optionInputs">
+					<ul class="noBulletList">
+						<li>
+							<select id="kSelect">
+								<option value="0">0</option>
+								<option value="1">1</option>
+								<option value="2">2</option>
+								<option value="3">3</option>
+								<option value="4">4</option>
+								<option value="5">5</option>
+								<option value="6">6</option>
+								<option value="7">7</option>
+								<option value="8">8</option>
+								<option value="9">9</option>
+							</select>
+						</li>
+						<li>
+							<select id="filterSelect">
+								<option value="0">1</option>
+								<option value="1">1, 2</option>
+								<option value="2">1, 2, 3</option>
+							</select>
+						</li>
+						</li>
+						<li>
+							<input type="checkbox" id="removeFalsePositives" checked>
+						</li>
+					</ul>
+				</div>
+				<input id="searchButton" type="button" value="Search" onclick="initiateSearch()">
+				<div id="progressBox">
+					<div id="progressBar"></div>
+				</div>
+			</div>
+
+			<!--DESCRIPTION-->
+			<div id="descriptionBox">
+
+			<h2>Instructions</h2>
+			<p>
+			This online tool searches an input text for matches of an input pattern. A match can either be the original input pattern or any rotation of the input pattern. A match may also be approximate within the user specified bound. The text is first filtered with 1 to 3 filters to a reduced search space, represented by a list of 0-indexed locations in the text. These indices represent the location of candidate matches and may include false positives. These filtered candidates can optionally be verified to produce a final definitive list of matches.</p>
+			<p>
+			<b>K Bound:</b>
+			Describes the maximum number of mismatches between pattern and text that may be ignored. K = 0 is equivalent to exact circular string matching. K = 1 means all but 1 character was matched etc.</p>
+			<p>
+			<b>Filters:</b>
+			There are 1 to 3 filters that may be applied in the filtering stage. Applying additional filters may increase the search time but reduces the size of the final list of candidate locations.
+			<ol>
+			  <li>Value Sum</li>
+			  <li>Absolute Character Difference Sum</li>
+			  <li>Individual Character Count</li>
+			</ol></p>
+			<p>
+			<b>Remove False Positives:</b>
+			If this is not checked, the list of locations produced will represent candidate locations of matches and may contain false positives. If this is checked, the list of locations will be the final correct list of match locations.</p>
+			<div>
+		</div>
+	</div>
+		
+	</body>
+
+	<script src="filter.js"></script>
+
+	<script type="text/javascript">
+		var logging = false;
+		var pattern = "";
+		var textFile = null;
+		
+		var handleFileSelect = function(evt) {
+			filePickerId = evt.target.id;
+			searchResults.value = "";
+			
+			// Convert file to base64 text
+			var files = evt.target.files;
+			var file = files[0];
+
+			// Reset either patten or text
+			if (filePickerId === "patternFilePicker") {
+				pattern = "";
+
+				// Set char count to default status
+				patternCharCount.innerHTML = "0 Chars";
+				patternDisplay.value = "";
+				patternDisplay.placeholder = "Pattern to find";
+			}
+			else if (filePickerId === "textFilePicker") {
+				textFileSize.innerHTML = "0 Bytes"
+				textFile = null;
+			}
+
+			if (files && file) {
+				if (filePickerId === "patternFilePicker") {
+					if (file.size > 1000 * 1000) {
+						searchResults.value = "Error: The pattern file must not exceed 1MB";
+						patternFilePicker.value = null;
+						return;
+					}
+
+					// Set char count to loading status
+					patternCharCount.innerHTML = "Loading File...";
+
+					var reader = new FileReader();
+
+					reader.onload = function(readerEvt) {
+						var data = cleanText(readerEvt.target.result);
+						var dataLength = data.length;
+						
+						// Display pattern
+						if (!isDNA(data)) {
+							searchResults.value = "Error: The pattern file must only use DNA characters ACGT";
+							patternFilePicker.value = null;
+							patternCharCount.innerHTML = "0 Chars"
+							textFileSize.innerHTML = "0 Bytes"
+							return;
+						}
+
+						if (file.size > 100000) {
+							patternDisplay.placeholder = "Too large to display";
+							patternDisplay.value = "";
+						}
+						else {
+							patternDisplay.value = data;
+						}
+
+						// Update char count
+						patternCharCount.innerHTML = numberWithCommas(dataLength) + " Chars";
+
+						// Update pattern
+						pattern = data;
+					};
+
+					reader.readAsBinaryString(file);
+
+					if (logging) {console.log("Pattern Stored");}
+				}
+				else if (filePickerId === "textFilePicker") {
+					textFile = file;
+					textFileSize.innerHTML = byteFormat(file.size);
+					if (logging) {console.log("Text File Selected");}
+				}
+			}
+		};
+		
+		function initiateSearch() {		
+			searchResults.innerHTML = "";
+
+			var k = parseInt(kSelect.value);
+
+			if (pattern === "" || textFile === null) {
+				searchResults.value = "Error: The pattern or text is empty";
+				return;
+			}
+
+			if (k*k >= pattern.length) {
+				searchResults.value = "Error: The K bound is too large for such a small pattern";
+				return;
+			}
+
+			if (pattern.length < 3) {
+				searchResults.value = "Error: The pattern must contain at least 3 characters";
+				return;
+			}
+
+			if (pattern.length > textFile.size) {
+				searchResults.value = "Error: The pattern size must not exceed the text size";
+				return;
+			}
+
+			if (!isDNA(pattern)) {
+				searchResults.value = "Error: The pattern file must only use DNA characters ACGT";
+				return;
+			}
+
+			searchButton.disabled = true;
+
+			var filterOption = filterSelect.value;
+			var falsePositivesOption = removeFalsePositives.checked;
+
+			var callback = function(x) {
+				return filterFunctions(x, pattern, k , false, filterOption, falsePositivesOption);
+			};
+
+			var chunkSize = 1000 * 1000 * 2; // Read text in 2MB chunks
+			var overlapSize = pattern.length - 1;
+			var matches = [];
+			parseFile(textFile, callback, chunkSize, overlapSize, matches);
+		}
+
+		var handlePatternDisplayChange = function(evt) {
+			pattern = evt.target.value;
+			patternCharCount.innerHTML = pattern.length + " Chars";
+			patternFilePicker.value = null;
+			patternDisplay.placeholder = "Pattern to find";
+			if (logging) {console.log("Pattern Stored");}
+		}
+
+		var cleanText = function(text) {
+			return text.replace(/(\r\n|\n|\r)/gm,"").replace(/ +?/g, '').replace(/\t/g, '');
+		}
+
+		var isDNA = function(text) {
+			var validChars = "acgtACGT"
+
+			for (var i = 0; i < text.length; ++i) {
+
+				var validChar = false;
+
+				for(var j = 0; j < validChars.length; ++j) {
+					if (text[i] === validChars[j]) {
+						validChar = true;
+					}
+				}
+
+				if (!validChar) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+		
+		if (window.File && window.FileReader && window.FileList && window.Blob) {
+			patternFilePicker.addEventListener('change', handleFileSelect, false);
+			textFilePicker.addEventListener('change', handleFileSelect, false);
+			patternDisplay.addEventListener('keyup', handlePatternDisplayChange, false);
+		} else {
+			alert('The File APIs are not fully supported in this browser.');
+			patternFilePicker.disabled = true;
+			textFilePicker.disabled = true;
+		}
+
+		function numberWithCommas(x) {
+		    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+		}
+
+		function updateProgressBar(x) {
+		    var elem = document.getElementById("progressBar");
+           	elem.style.width = x.toString() + '%';
+		}
+
+		function doDL(s){
+		    function dataUrl(data) {return "data:x-application/text," + escape(data);}
+		    window.open(dataUrl(s));
+		}
+
+		function parseFile(file, callback, chunkSize, overlapSize, matches) {
+		    var offset = 0;
+		    var self = this;
+		    var chunkReaderBlock = null;
+
+		    var fileSize = file.size;
+		    var oldPercentage = 0;
+
+		    matchesCount = 0
+
+			updateProgressBar(0);
+
+		    var readEventHandler = function(evt) {
+		        if (evt.target.error == null) {
+		        	if (logging) {console.log("offset", offset);}
+
+		            newMatches = callback(evt.target.result); // Callback for handling read chunk
+
+		            // Check for text using non DNA characters
+		            if (newMatches === -1) {
+		            	updateProgressBar(0);
+		            	searchResults.value = "Error: The text file must only use DNA characters ACGT";
+		            	searchButton.disabled = false;
+		            	return;
+		            }
+
+		            matchesCount += newMatches.length;
+		            
+		            // Too many matches found
+		            if (matchesCount >= 100000) {
+		            	updateProgressBar(0);
+		            	searchResults.value = "Over 100,000 possible matches found, consider refining your search";
+		            	searchButton.disabled = false;
+		            	return;
+		            }
+
+					for (var i = 0; i < newMatches.length; ++i) {
+					    matches.push({"loc": offset + newMatches[i]["loc"], "error": newMatches[i]["error"]})
+					}
+
+					offset += (evt.target.result.length) - overlapSize;
+
+	            	var newPercentage = Math.round(100 * offset / fileSize, 4);
+	            	if (oldPercentage != newPercentage) {
+	            		updateProgressBar(newPercentage);
+	            		oldPercentage = newPercentage;
+	            	}
+		        } else {
+		            if (logging) {console.log("Read error: " + evt.target.error);}
+		            searchButton.disabled = false;
+		            return;
+		        }
+		        if (offset + overlapSize >= fileSize) {
+
+	            	if (oldPercentage != 100) {
+	            		updateProgressBar(100);
+	            	}
+
+					if (matches.length > 0) {
+						var maxMatchLength =  matches[matches.length - 1]["loc"].toString().length;
+						var result = "";
+
+						var locationHeading = "Location";
+						var potentialLocationHeading = "Potential Location";
+						var errorHeading = "K Error";
+						var splitPosition = 0;
+
+						// Print candidate locations
+						if (matches[0]["error"] === undefined) {
+							result = potentialLocationHeading + "\n";
+							for (var i = 0; i < matches.length; ++i) {
+							    result += matches[i]["loc"] + "\n";
+							}
+						} // Print locations and errors
+						else {
+							result = "";
+
+							// Calculate position of "|" split and make column headings
+							if (maxMatchLength > locationHeading.length) {
+								splitPosition = maxMatchLength + 1
+								result = locationHeading
+
+								for (var j = 0; j < splitPosition - locationHeading.length; ++j) {
+							    	result += " ";
+							    }
+
+							    result += "| " + errorHeading + "\n";
+							}
+							else {
+								splitPosition = locationHeading.length + 1
+								result = locationHeading + " | " + errorHeading + "\n";
+							}
+
+							for (var i = 0; i < matches.length; ++i) {
+							    result += matches[i]["loc"]
+							    for (var j = 0; j < splitPosition - matches[i]["loc"].toString().length; ++j) {
+							    	result += " ";
+							    }
+							    result += "| " + matches[i]["error"] + "\n"; 
+							}
+						}
+
+						searchResults.value = result;
+					}
+					else { // No results
+						searchResults.value = "No matching windows found";
+					}
+
+					searchButton.disabled = false;
+		            return;
+		        }
+
+		        // Off to the next chunk
+		        chunkReaderBlock(offset, chunkSize, file);
+		    }
+
+		    chunkReaderBlock = function(_offset, length, _file) {
+		        var r = new FileReader();
+		        var blob = _file.slice(_offset, length + _offset);
+		        r.onload = readEventHandler;
+		        r.readAsText(blob);
+		    }
+
+		    // Now let's start the read with the first block
+		    chunkReaderBlock(offset, chunkSize, file);
+		}
+
+		function byteFormat(bytes) {
+			if (bytes < 1000) {
+				return bytes + " B";
+			}
+			else if (bytes < 1000000) {
+				return bytes / 1000 + " KB";
+			}
+			else if (bytes < 1000000000) {
+				return bytes / 1000000 + " MB";
+			}
+			else {
+				return bytes / 1000000000 + " GB";
+			}
+		}
+	</script>
+</html>

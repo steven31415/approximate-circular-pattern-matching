@@ -1,0 +1,185 @@
+body {
+	background-color: #cce6ff;
+}
+
+div.roundBox {
+	border-radius: 15px;
+	position: absolute;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-family: sans-serif;
+	text-align: center;
+}
+
+textarea.fileData {
+	position: absolute;
+	padding: 0px;
+	top: 50px;
+	left: 30px;
+    width: 490px;
+    height: 260px;
+    font-size: 14px;
+}
+
+input.patternFilePicker {
+	position: absolute;
+	padding: 0px;
+	top: 330px;
+	left: 30px;
+}
+
+input.textFilePicker {
+	position: absolute;
+	padding: 0px;
+	top: 70px;
+	left: 30px;
+}
+
+label.charCount {
+	position: absolute;
+	padding: 0px;
+	top: 330px;
+	left: 350px;
+	width: 150px;
+	font-family: sans-serif;
+	font-weight: bold;
+	text-align: right;
+}
+
+label.fileSize {
+	position: absolute;
+	padding: 0px;
+	top: 70px;
+	left: 350px;
+	width: 150px;
+	font-family: sans-serif;
+	font-weight: bold;
+	text-align: right;
+}
+
+li {
+	font-family: sans-serif;
+	padding: 5px;
+}
+
+ul.noBulletList {
+	list-style-type: none;
+}
+
+textarea {
+	background-color: #e6f3ff;
+	color: #331900;
+}
+
+#contentBox {
+	position: relative;
+	background-color: white;
+	width: 980px;
+	height: 1350px;
+	margin: auto;
+}
+
+#patternBox {
+	left: 40px;
+	top: 40px;
+	width: 550px;
+	height: 380px;
+	background-color: #cccccc;
+}
+
+#textBox {
+	left: 40px;
+	top: 460px;
+	width: 550px;
+	height: 120px;
+	background-color: #cccccc;
+}
+
+#resultBox {
+	left: 630px;
+	top: 40px;
+	width: 310px;
+	height: 540px;
+	background-color: #cccccc;
+}
+
+#optionsBox {
+	left: 40px;
+	top: 660px;
+	width: 900px;
+	height: 130px;
+	background-color: #a6a6a6;
+}
+
+#descriptionBox {
+	position: absolute;
+	left: 40px;
+	top: 840px;
+	width: 900px;
+	height: 200px;
+	font-family: sans-serif;
+	font-size: 16px;
+}
+
+#title {
+	text-align: center;
+}
+
+#searchResults {
+	position: absolute;
+	padding: 0px;
+	top: 50px;
+	left: 30px;
+    width: 250px;
+    height: 420px;
+}
+
+#downloadButton {
+	position: absolute;
+	top: 490px;
+	left: 30px;
+}
+
+#searchButton {
+	position: absolute;
+	left: 520px;
+	top: 20px;
+	width: 200px;
+	height: 40px;
+	font-size: 18px;
+}
+
+#optionTitles {
+	position: absolute;
+	text-align: right;
+	width: 250px;
+}
+
+#optionInputs {
+	position: absolute;
+	text-align: left;
+	left: 220px;
+	width: 500px;
+}
+
+#verifyOption {
+	position: absolute;
+	left: 42px;
+}
+
+#progressBox {
+    position: relative;
+    left: 400px;
+    top: 75px;
+    width: 430px;
+    height: 20px;
+    background-color: grey;
+}
+
+#progressBar {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: green;
+}
