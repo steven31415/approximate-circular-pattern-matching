@@ -1,0 +1,8 @@
+randDNA.py generates random DNA data (a string composed of bases A, C, G, T).
+Each base is equally likely to occur with a rate of 25%.
+
+The python file requires 2 arguments when executed from the command line:
+randDNA.py <chars> <output file>
+
+<chars> is an integer number of bases that should be generated. E.g. for a 100KB file this is 100,000.
+<output file> is a string representing the name of the file where the output is saved.
