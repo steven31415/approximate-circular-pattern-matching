@@ -1,1 +1,1 @@
-# approximate-circular-string-search
+# approximate-circular-pattern-matching
